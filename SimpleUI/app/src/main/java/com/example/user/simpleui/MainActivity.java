@@ -1,5 +1,7 @@
 package com.example.user.simpleui;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -31,6 +33,9 @@ public class MainActivity extends AppCompatActivity {
     ListView listView;
     Spinner spinner;
 
+    SharedPreferences sp;
+    SharedPreferences.Editor editor;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -43,11 +48,23 @@ public class MainActivity extends AppCompatActivity {
         spinner = (Spinner)findViewById(R.id.spinner);
         orders = new ArrayList<>();
 
+        sp = getSharedPreferences("setting", Context.MODE_PRIVATE);
+        editor = sp.edit();
+
+        String[] data = Utils.readFile(this, "notes").split("\n");
+
+        textView.setText(data[1]);
+
+        editText.setText(sp.getString("editText", ""));
+
         editText.setOnKeyListener(new View.OnKeyListener() {
             @Override
             public boolean onKey(View v, int keyCode, KeyEvent event) {
-                if(keyCode == KeyEvent.KEYCODE_ENTER && event.getAction() == KeyEvent.ACTION_DOWN)
-                {
+                String text = editText.getText().toString();
+                editor.putString("editText", text);
+                editor.apply();
+
+                if (keyCode == KeyEvent.KEYCODE_ENTER && event.getAction() == KeyEvent.ACTION_DOWN) {
                     click(v);
                     return true;
                 }
@@ -66,9 +83,15 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        int checkedId = sp.getInt("radioGroup", R.id.blackTeaRadioButton);
+        radioGroup.check(checkedId);
+
         radioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(RadioGroup group, int checkedId) {
+                editor.putInt("radioGroup", checkedId);
+                editor.apply();
+
                 RadioButton radioButton = (RadioButton) findViewById(checkedId);
                 drinkName = radioButton.getText().toString();
             }
@@ -77,13 +100,16 @@ public class MainActivity extends AppCompatActivity {
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Order order = (Order)parent.getAdapter().getItem(position);
+                Order order = (Order) parent.getAdapter().getItem(position);
                 Snackbar.make(view, order.note, Snackbar.LENGTH_SHORT).show();
             }
         });
 
+
+
         setupListView();
         setupSpinner();
+
     }
 
     void setupListView()
@@ -112,6 +138,8 @@ public class MainActivity extends AppCompatActivity {
         order.storeInfo = (String)spinner.getSelectedItem();
 
         orders.add(order);
+
+        Utils.writeFile(this, "notes", order.note + '\n');
 
         editText.setText("");
 
