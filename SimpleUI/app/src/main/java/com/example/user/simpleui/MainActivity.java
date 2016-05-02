@@ -15,11 +15,9 @@ import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ListView;
-import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.Spinner;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import java.util.ArrayList;
 
@@ -28,6 +26,8 @@ import io.realm.RealmConfiguration;
 import io.realm.RealmResults;
 
 public class MainActivity extends AppCompatActivity {
+
+    private static final int REQUEST_CODE_MENU_ACTIVITY = 0;
 
     TextView textView;
     EditText editText;
@@ -38,6 +38,8 @@ public class MainActivity extends AppCompatActivity {
     CheckBox checkBox;
     ListView listView;
     Spinner spinner;
+
+    String menuResults = "";
 
     SharedPreferences sp;
     SharedPreferences.Editor editor;
@@ -61,7 +63,7 @@ public class MainActivity extends AppCompatActivity {
         editor = sp.edit();
 
         // Create a RealmConfiguration which is to locate Realm file in package's "files" directory.
-        RealmConfiguration realmConfig = new RealmConfiguration.Builder(this).build();
+        RealmConfiguration realmConfig = new RealmConfiguration.Builder(this).deleteRealmIfMigrationNeeded().build();
         // Get a Realm instance for this thread
         realm = Realm.getInstance(realmConfig);
 
@@ -148,7 +150,7 @@ public class MainActivity extends AppCompatActivity {
         textView.setText(text);
 
         Order order = new Order();
-        order.setDrinkName(drinkName);
+        order.setMenuResults(menuResults);
         order.setNote(note);
         order.setStoreInfo((String)spinner.getSelectedItem());
 
@@ -158,6 +160,7 @@ public class MainActivity extends AppCompatActivity {
         realm.commitTransaction();
 
         editText.setText("");
+        menuResults = "";
 
         setupListView();
     }
@@ -168,7 +171,20 @@ public class MainActivity extends AppCompatActivity {
 
         intent.setClass(this, DrinkMenuActivity.class);
 
-        startActivity(intent);
+        startActivityForResult(intent, REQUEST_CODE_MENU_ACTIVITY);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_CODE_MENU_ACTIVITY)
+        {
+            if(resultCode == RESULT_OK)
+            {
+                menuResults = data.getStringExtra("result");
+
+            }
+        }
     }
 
     @Override
