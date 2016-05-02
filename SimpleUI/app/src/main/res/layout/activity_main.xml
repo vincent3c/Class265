@@ -42,7 +42,8 @@
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
         android:orientation="horizontal"
-        android:id="@+id/radioGroup">
+        android:id="@+id/radioGroup"
+        android:visibility="gone">
 
         <RadioButton
             android:layout_width="wrap_content"
@@ -65,11 +66,10 @@
         android:layout_height="wrap_content"
         android:text="Hide Sex"
         android:id="@+id/hideCheckBox"
-        android:layout_alignBottom="@+id/button"
-        android:layout_toRightOf="@+id/button"
-        android:layout_toEndOf="@+id/button"
         android:checked="false"
-        android:enabled="false" />
+        android:enabled="false"
+        android:layout_above="@+id/listView"
+        android:layout_toRightOf="@+id/button2" />
 
     <ListView
         android:layout_width="match_parent"
@@ -85,5 +85,14 @@
         android:layout_below="@+id/radioGroup"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Menu"
+        android:id="@+id/button2"
+        android:layout_above="@+id/listView"
+        android:layout_toRightOf="@+id/button"
+        android:onClick="goToMenu" />
 
 </RelativeLayout>
