@@ -20,15 +20,16 @@ public class SaveCallbackWithRealm implements SaveCallback{
 
     @Override
     public void done(ParseException e) {
-        Realm realm = Realm.getDefaultInstance();
+        if (e == null) {
+            Realm realm = Realm.getDefaultInstance();
 
-        // Persist your data easily
-        realm.beginTransaction();
-        realm.copyToRealm(realmObject);
-        realm.commitTransaction();
+            // Persist your data easily
+            realm.beginTransaction();
+            realm.copyToRealm(realmObject);
+            realm.commitTransaction();
 
-        realm.close();
-
+            realm.close();
+        }
         saveCallback.done(e);
     }
 }

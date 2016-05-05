@@ -158,10 +158,6 @@ public class MainActivity extends AppCompatActivity {
 
     void setupListView()
     {
-//        RealmResults results = realm.allObjects(Order.class);
-//
-//        OrderAdapter adapter = new OrderAdapter(this, results.subList(0, results.size()));
-//        listView.setAdapter(adapter);
         // 把網路資料抓下來
         ParseQuery<ParseObject> query = new ParseQuery<ParseObject>("Order");
         query.findInBackground(new FindCallback<ParseObject>() {
@@ -169,6 +165,13 @@ public class MainActivity extends AppCompatActivity {
             public void done(List<ParseObject> objects, ParseException e) {
                 if (e != null) {
                     Toast.makeText(MainActivity.this, e.toString(), Toast.LENGTH_LONG).show();
+                    // 如果網路取不到資料就抓Loacl的資料
+                    Realm realm = Realm.getDefaultInstance();
+                    RealmResults results = realm.allObjects(Order.class);
+
+                    OrderAdapter adapter = new OrderAdapter(MainActivity.this, results.subList(0, results.size()));
+                    listView.setAdapter(adapter);
+                    realm.close();
                     return;
                 }
                 List<Order> orders = new ArrayList<Order>();
