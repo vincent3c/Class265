@@ -18,6 +18,11 @@ import android.widget.ListView;
 import android.widget.RadioGroup;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
+
+import com.parse.ParseException;
+import com.parse.ParseObject;
+import com.parse.SaveCallback;
 
 import java.util.ArrayList;
 
@@ -51,6 +56,24 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Log.d("debug", "Main Activity OnCreate");
+
+        ParseObject testObject = new ParseObject("TestObject");
+        testObject.put("foo", "bar");
+//        ParseObject testObject = new ParseObject("HomeworkParse");  //作業用
+//        testObject.put("sid", "And26518");  //作業用
+//        testObject.put("email", "vincent3c_11@hotmail.com");    //作業用
+        testObject.saveInBackground(new SaveCallback() {
+            // 將錯誤訊印出來
+            @Override
+            public void done(ParseException e) {
+                if (e != null) {
+                    Toast.makeText(MainActivity.this, e.toString(), Toast.LENGTH_LONG).show();
+                } else {
+                    Toast.makeText(MainActivity.this, "save Success", Toast.LENGTH_LONG).show();
+                }
+            }
+        });
+
         textView = (TextView)findViewById(R.id.textView);
         editText = (EditText)findViewById(R.id.editText);
         radioGroup = (RadioGroup)findViewById(R.id.radioGroup);
