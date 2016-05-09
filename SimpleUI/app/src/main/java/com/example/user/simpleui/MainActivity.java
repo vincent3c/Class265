@@ -273,7 +273,7 @@ public class MainActivity extends AppCompatActivity {
             public void done(ParseException e) {
                 // �����~�ɧi��
                 if (e != null) {
-                    Toast.makeText(MainActivity.this, "Save Fail", Toast.LENGTH_LONG).show();
+                    Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
                 }
 
                 editText.setText("");
