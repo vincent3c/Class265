@@ -1,11 +1,15 @@
 package com.example.user.simpleui;
 
 import android.content.Context;
+import android.net.Uri;
+import android.os.Environment;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.URI;
 
 /**
  * Created by user on 2016/4/28.
@@ -40,5 +44,15 @@ public class Utils {
             e.printStackTrace();
         }
         return "";
+    }
+
+    public static Uri getPhotoURI() {
+        File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+        //確認資料夾是否存在，不存在建立
+        if (dir.exists() == false) {
+            dir.mkdir();
+        }
+        File file = new File(dir, "simpleUI_photo.png"); // 建立檔案
+        return Uri.fromFile(file);
     }
 }
