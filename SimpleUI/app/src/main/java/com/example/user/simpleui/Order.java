@@ -1,6 +1,7 @@
 package com.example.user.simpleui;
 
 import com.parse.Parse;
+import com.parse.ParseFile;
 import com.parse.ParseObject;
 import com.parse.SaveCallback;
 
@@ -14,11 +15,11 @@ public class Order extends RealmObject{
     private String menuResults;
     private String storeInfo;
 
+    byte[] photo = null;
+
     public String getNote() { return note; }
 
-    public void setNote(String note) {
-        this.note = note;
-    }
+    public void setNote(String note) { this.note = note;  }
 
     public String getMenuResults() {
         return menuResults;
@@ -41,6 +42,11 @@ public class Order extends RealmObject{
         parseObject.put("note", note);
         parseObject.put("storeInfo", storeInfo);
         parseObject.put("menuResults", menuResults);
+
+        if (photo != null) {
+            ParseFile file = new ParseFile("photo.png", photo);
+            parseObject.put("photo", file);
+        }
 
         parseObject.saveInBackground(saveCallback);
     }

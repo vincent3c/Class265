@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Build;
 import android.provider.MediaStore;
 import android.support.design.widget.Snackbar;
@@ -47,6 +48,8 @@ public class MainActivity extends AppCompatActivity {
 
     private static final int REQUEST_CODE_MENU_ACTIVITY = 0;
     private static final int REQUEST_CODE_CAMERA_ACTIVITY = 1;
+
+    private boolean hasPhoto = false;
 
     TextView textView;
     EditText editText;
@@ -248,6 +251,18 @@ public class MainActivity extends AppCompatActivity {
         order.setNote(note);
         order.setStoreInfo((String) spinner.getSelectedItem());
 
+        if (hasPhoto) {
+            Uri uri = Utils.getPhotoURI();
+
+            byte[] photo = Utils.uriToBytes(this, uri);
+
+            if (photo == null) {
+                Log.d("Debug", "Read Photo Fail");
+            } else {
+                order.photo = photo;
+            }
+        }
+
 //        // Persist your data easily
 //        realm.beginTransaction();
 //        realm.copyToRealm(order);
@@ -263,6 +278,9 @@ public class MainActivity extends AppCompatActivity {
 
                 editText.setText("");
                 menuResults = "";
+
+                photoImageView.setImageResource(0);
+                hasPhoto = false;
 
                 setupListView();
             }
@@ -289,11 +307,11 @@ public class MainActivity extends AppCompatActivity {
             if(resultCode == RESULT_OK)
             {
                 menuResults = data.getStringExtra("result");
-
             }
         } else if (requestCode == REQUEST_CODE_CAMERA_ACTIVITY) {
             if (resultCode == RESULT_OK) {
                 photoImageView.setImageURI(Utils.getPhotoURI());
+                hasPhoto = true;
             }
         }
     }
