@@ -62,11 +62,11 @@ public class MainActivity extends AppCompatActivity {
 
 //        ParseObject testObject = new ParseObject("TestObject");
 //        testObject.put("foo", "bar");
-////        ParseObject testObject = new ParseObject("HomeworkParse");  //作業用
-////        testObject.put("sid", "And26518");  //作業用
-////        testObject.put("email", "vincent3c_11@hotmail.com");    //作業用
+////        ParseObject testObject = new ParseObject("HomeworkParse");  //嚙瑾嚙羯嚙踝蕭
+////        testObject.put("sid", "And26518");  //嚙瑾嚙羯嚙踝蕭
+////        testObject.put("email", "vincent3c_11@hotmail.com");    //嚙瑾嚙羯嚙踝蕭
 //        testObject.saveInBackground(new SaveCallback() {
-//            // 將錯誤訊印出來
+//            // 嚙瞇嚙踝蕭嚙羯嚙確嚙盤嚙碼嚙踝蕭
 //            @Override
 //            public void done(ParseException e) {
 //                if (e != null) {
@@ -158,23 +158,22 @@ public class MainActivity extends AppCompatActivity {
 
     void setupListView()
     {
-        // 把網路資料抓下來
+        final RealmResults results = realm.allObjects(Order.class);
+        OrderAdapter adapter = new OrderAdapter(MainActivity.this, results.subList(0, results.size()));
+        listView.setAdapter(adapter);
+
         ParseQuery<ParseObject> query = new ParseQuery<ParseObject>("Order");
         query.findInBackground(new FindCallback<ParseObject>() {
             @Override
             public void done(List<ParseObject> objects, ParseException e) {
                 if (e != null) {
                     Toast.makeText(MainActivity.this, e.toString(), Toast.LENGTH_LONG).show();
-                    // 如果網路取不到資料就抓Loacl的資料
-                    Realm realm = Realm.getDefaultInstance();
-                    RealmResults results = realm.allObjects(Order.class);
 
-                    OrderAdapter adapter = new OrderAdapter(MainActivity.this, results.subList(0, results.size()));
-                    listView.setAdapter(adapter);
-                    realm.close();
                     return;
                 }
                 List<Order> orders = new ArrayList<Order>();
+
+                Realm realm = Realm.getDefaultInstance();
 
                 for (int i = 0; i < objects.size(); i++) {
                     Order order = new Order();
@@ -182,7 +181,15 @@ public class MainActivity extends AppCompatActivity {
                     order.setMenuResults(objects.get(i).getString("menuResults"));
                     order.setStoreInfo(objects.get(i).getString("storeInfo"));
                     orders.add(order);
+
+                    if (results.size() <= i) {
+                        realm.beginTransaction();
+                        realm.copyToRealm(order);
+                        realm.commitTransaction();
+                    }
                 }
+
+                realm.close();
 
                 OrderAdapter adapter = new OrderAdapter(MainActivity.this, orders);
                 listView.setAdapter(adapter);
@@ -217,7 +224,7 @@ public class MainActivity extends AppCompatActivity {
         SaveCallbackWithRealm saveCallbackWithRealm = new SaveCallbackWithRealm(order, new SaveCallback() {
             @Override
             public void done(ParseException e) {
-                // 有錯誤時告知
+                // 嚙踝蕭嚙踝蕭嚙羯嚙褕告嚙踝蕭
                 if (e != null) {
                     Toast.makeText(MainActivity.this, "Save Fail", Toast.LENGTH_LONG).show();
                 }
