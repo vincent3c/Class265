@@ -67,7 +67,28 @@ public class OrderActivity extends AppCompatActivity {
 //                });
 //                thread.start();
 //            }
-            (new ImageLoadingTask(photo)).execute(url);
+//            (new ImageLoadingTask(photo)).execute(url);
+            (new GeoCodingTask(photo)).execute("台北市羅斯福路四段一號");
+        }
+    }
+
+    private static class GeoCodingTask extends AsyncTask<String, Void , Bitmap> {
+        ImageView imageView;
+        @Override
+        protected Bitmap doInBackground(String... params) {
+            String address = params[0] ;
+            double[] latlng = Utils.addressToLatLng(address);
+            return Utils.getStaticMap(latlng);
+        }
+
+        @Override
+        protected void onPostExecute(Bitmap bitmap) {
+            super.onPostExecute(bitmap);
+            imageView.setImageBitmap(bitmap);
+        }
+
+        public GeoCodingTask(ImageView imageView){
+            this.imageView =imageView;
         }
     }
 
