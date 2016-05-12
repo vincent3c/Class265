@@ -177,6 +177,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Order order = (Order) parent.getAdapter().getItem(position);
+                goToDetailOrder(order);
                 Snackbar.make(view, order.getNote(), Snackbar.LENGTH_SHORT).show();
             }
         });
@@ -216,6 +217,10 @@ public class MainActivity extends AppCompatActivity {
                     order.setNote(objects.get(i).getString("note"));
                     order.setMenuResults(objects.get(i).getString("menuResults"));
                     order.setStoreInfo(objects.get(i).getString("storeInfo"));
+                    if (objects.get(i).getParseFile("photo") != null) {
+                        //取得photo的url
+                        order.photoURL = objects.get(i).getParseFile("photo").getUrl();
+                    }
                     orders.add(order);
 
                     if (results.size() <= i) {
@@ -237,22 +242,27 @@ public class MainActivity extends AppCompatActivity {
 
     void  setupSpinner()
     {
+        progressBar.setVisibility(View.VISIBLE);
+
         final Spinner storeName = (Spinner) findViewById(R.id.spinner);
         ParseQuery<ParseObject> query = new ParseQuery<ParseObject>("storeInfo");
         query.findInBackground(new FindCallback<ParseObject>() {
             @Override
             public void done(List<ParseObject> list, ParseException e) {
-                if (e == null) {
-                    ArrayList<String> nameList = new ArrayList<>();
-                    for(ParseObject object : list) {
-                        nameList.add(object.getString("name"));
-                    }
-                    ArrayAdapter adapter = new ArrayAdapter(
-                            getApplicationContext(),android.R.layout.simple_list_item_1 ,nameList);
-                    storeName.setAdapter(adapter);
+                if (e != null) {
+                    Toast.makeText(MainActivity.this, e.toString(), Toast.LENGTH_LONG).show();
+                    progressBar.setVisibility(View.GONE);
+                    return;
                 }
-            }
+                ArrayList<String> nameList = new ArrayList<>();
+                for (ParseObject object : list) {
+                    nameList.add(object.getString("name"));
+                }
 
+                ArrayAdapter adapter = new ArrayAdapter(
+                        MainActivity.this, android.R.layout.simple_list_item_1, nameList);
+                storeName.setAdapter(adapter);
+            }
         });
 
 
@@ -325,6 +335,16 @@ public class MainActivity extends AppCompatActivity {
         intent.setClass(this, DrinkMenuActivity.class);
 
         startActivityForResult(intent, REQUEST_CODE_MENU_ACTIVITY);
+    }
+
+    public void goToDetailOrder(Order order) {
+        Intent intent = new Intent();
+        intent.setClass(this, OrderActivity.class);
+        intent.putExtra("note", order.getNote());
+        intent.putExtra("storeInfo", order.getStoreInfo());
+        intent.putExtra("menuResults", order.getMenuResults());
+        intent.putExtra("photoURL", order.photoURL);
+        startActivity(intent);  //將資料帶到OrderActivity
     }
 
     @Override
