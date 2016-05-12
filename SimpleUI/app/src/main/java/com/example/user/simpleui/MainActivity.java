@@ -1,5 +1,6 @@
 package com.example.user.simpleui;
 
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -62,6 +63,7 @@ public class MainActivity extends AppCompatActivity {
     Spinner spinner;
     ProgressBar progressBar;
     ImageView photoImageView;
+    ProgressDialog progressDialog;
 
     String menuResults = "";
 
@@ -101,6 +103,7 @@ public class MainActivity extends AppCompatActivity {
         spinner = (Spinner)findViewById(R.id.spinner);
         progressBar = (ProgressBar)findViewById(R.id.progressBar);
         photoImageView = (ImageView)findViewById(R.id.imageView);
+        progressDialog = new ProgressDialog(this);
         orders = new ArrayList<>();
 
         sp = getSharedPreferences("setting", Context.MODE_PRIVATE);
@@ -234,14 +237,36 @@ public class MainActivity extends AppCompatActivity {
 
     void  setupSpinner()
     {
-        String[] data = getResources().getStringArray(R.array.storeInfo);
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, data);
+        final Spinner storeName = (Spinner) findViewById(R.id.spinner);
+        ParseQuery<ParseObject> query = new ParseQuery<ParseObject>("storeInfo");
+        query.findInBackground(new FindCallback<ParseObject>() {
+            @Override
+            public void done(List<ParseObject> list, ParseException e) {
+                if (e == null) {
+                    ArrayList<String> nameList = new ArrayList<>();
+                    for(ParseObject object : list) {
+                        nameList.add(object.getString("name"));
+                    }
+                    ArrayAdapter adapter = new ArrayAdapter(
+                            getApplicationContext(),android.R.layout.simple_list_item_1 ,nameList);
+                    storeName.setAdapter(adapter);
+                }
+            }
 
-        spinner.setAdapter(adapter);
+        });
+
+
+//        String[] data = getResources().getStringArray(R.array.storeInfo);
+//        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, data);
+//
+//        spinner.setAdapter(adapter);
     }
 
     public void click(View view)
     {
+        progressDialog.setTitle("Loading...");
+        progressDialog.show();
+
         note = editText.getText().toString();
         String text = note;
         textView.setText(text);
@@ -281,6 +306,9 @@ public class MainActivity extends AppCompatActivity {
 
                 photoImageView.setImageResource(0);
                 hasPhoto = false;
+
+                //讓loading消失
+                progressDialog.dismiss();
 
                 setupListView();
             }
