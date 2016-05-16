@@ -103,6 +103,7 @@ public class MainActivity extends AppCompatActivity {
         spinner = (Spinner)findViewById(R.id.spinner);
         progressBar = (ProgressBar)findViewById(R.id.progressBar);
         photoImageView = (ImageView)findViewById(R.id.imageView);
+
         progressDialog = new ProgressDialog(this);
         orders = new ArrayList<>();
 
@@ -242,8 +243,9 @@ public class MainActivity extends AppCompatActivity {
 
     void  setupSpinner()
     {
-        progressBar.setVisibility(View.VISIBLE);
 
+        // my homework answer
+        progressBar.setVisibility(View.VISIBLE);
         final Spinner storeName = (Spinner) findViewById(R.id.spinner);
         ParseQuery<ParseObject> query = new ParseQuery<ParseObject>("storeInfo");
         query.findInBackground(new FindCallback<ParseObject>() {
@@ -256,7 +258,7 @@ public class MainActivity extends AppCompatActivity {
                 }
                 ArrayList<String> nameList = new ArrayList<>();
                 for (ParseObject object : list) {
-                    nameList.add(object.getString("name"));
+                    nameList.add(object.getString("name") + "," + object.getString("address"));
                 }
 
                 ArrayAdapter adapter = new ArrayAdapter(
@@ -265,6 +267,27 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+
+//        ParseQuery<ParseObject> query = new ParseQuery<ParseObject>("storeInfo");
+//        query.findInBackground(new FindCallback<ParseObject>() {
+//            @Override
+//            public void done(List<ParseObject> objects, ParseException e) {
+//                if (e != null || objects == null) {
+//                    return;
+//                }
+//
+//                String[] storeInfo = new String[objects.size()];
+//                for (int i = 1; i < objects.size(); i++) {
+//                    ParseObject object = objects.get(i);
+//                    storeInfo[i] = object.getString("name") + "," + object.getString("address");
+//
+//                }
+//
+//                ArrayAdapter adapter = new ArrayAdapter(
+//                        MainActivity.this, android.R.layout.simple_list_item_1, storeInfo);
+//                spinner.setAdapter(adapter);
+//            }
+//        });
 
 //        String[] data = getResources().getStringArray(R.array.storeInfo);
 //        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, data);
