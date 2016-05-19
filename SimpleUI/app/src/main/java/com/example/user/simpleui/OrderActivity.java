@@ -1,11 +1,17 @@
 package com.example.user.simpleui;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.location.Location;
+//import android.location.LocationListener;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.SystemClock;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.widget.ImageView;
@@ -16,6 +22,12 @@ import com.directions.route.Route;
 import com.directions.route.RouteException;
 import com.directions.route.Routing;
 import com.directions.route.RoutingListener;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationListener;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
@@ -30,9 +42,12 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 
-public class OrderActivity extends AppCompatActivity {
+public class OrderActivity extends AppCompatActivity implements GeocodingTaskResponse,
+        RoutingListener, GoogleApiClient.ConnectionCallbacks,
+        GoogleApiClient.OnConnectionFailedListener, LocationListener {
 
     TextView note;
     TextView storeInfo;
@@ -44,17 +59,22 @@ public class OrderActivity extends AppCompatActivity {
     String address;
 
     MapFragment mapFragment;
+    private GoogleMap googleMap;
+    private ArrayList<Polyline> polylines;
+    private LatLng storeLocation;
+    private GoogleApiClient mGoogleApiClient;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_order_activity);
 
-        note = (TextView)findViewById(R.id.note);
-        storeInfo = (TextView)findViewById(R.id.storeInfo);
-        menuResults = (TextView)findViewById(R.id.menuResults);
+        note = (TextView) findViewById(R.id.note);
+        storeInfo = (TextView) findViewById(R.id.storeInfo);
+        menuResults = (TextView) findViewById(R.id.menuResults);
 //        photo = (ImageView)findViewById(R.id.photoImageView);
-        mapImageView = (ImageView)findViewById(R.id.mapImageView);
+        mapImageView = (ImageView) findViewById(R.id.mapImageView);
 
         Intent intent = getIntent();
         note.setText(intent.getStringExtra("note"));
@@ -100,12 +120,13 @@ public class OrderActivity extends AppCompatActivity {
         }
 
 
-        mapFragment = (MapFragment)getFragmentManager().findFragmentById(R.id.googleMapFragment);
+        mapFragment = (MapFragment) getFragmentManager().findFragmentById(R.id.googleMapFragment);
 
         mapFragment.getMapAsync(new OnMapReadyCallback() {
             @Override
-            public void onMapReady(GoogleMap googleMap) {
-                (new GeoCodingTask(googleMap)).execute(address);
+            public void onMapReady(GoogleMap map) {
+                (new GeoCodingTask(OrderActivity.this)).execute(address);
+                googleMap = map;
             }
         });
 
@@ -121,9 +142,139 @@ public class OrderActivity extends AppCompatActivity {
 //        }
     }
 
+    @Override
+    public void responseWithGeocodingResults(LatLng location) {
+        // check device share location
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {   // not agree share location
+            if (this.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(location, 17));
+                googleMap.addMarker(new MarkerOptions().position(location));
+                requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 0);
+                return;
+            }
+        }
+
+        // agree share location
+        storeLocation = location;
+        googleMap.setMyLocationEnabled(true);
+
+        if (mGoogleApiClient == null) {
+            mGoogleApiClient = new GoogleApiClient.Builder(this)
+                    .addConnectionCallbacks(this)
+                    .addOnConnectionFailedListener(this)
+                    .addApi(LocationServices.API)
+                    .build();
+            mGoogleApiClient.connect();
+        }
+
+    }
+
+    @Override
+    public void onRoutingFailure(RouteException e) {
+
+    }
+
+    @Override
+    public void onRoutingStart() {
+
+    }
+
+    @Override
+    public void onRoutingSuccess(ArrayList<Route> routes, int index) {
+        if (polylines != null) {
+            for (Polyline poly : polylines) {
+                poly.remove();
+            }
+        }
+
+        polylines = new ArrayList<>();
+        //add route(s) to the map.
+        for (int i = 0; i < routes.size(); i++) {
+
+            //In case of more than 5 alternative routes
+
+            PolylineOptions polyOptions = new PolylineOptions();
+            polyOptions.color(Color.BLUE);  // go way collor
+            polyOptions.width(10 + i * 3);  // go way width
+            polyOptions.addAll(routes.get(i).getPoints());
+            Polyline polyline = googleMap.addPolyline(polyOptions);
+            polylines.add(polyline);
+
+//            Toast.makeText(getApplicationContext(),"Route "+ (i+1) +": distance - "+ routes.get(i).getDistanceValue()+": duration - "+ routes.get(i).getDurationValue(),Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @Override
+    public void onRoutingCancelled() {
+
+    }
+
+    @Override
+    public void onConnected(Bundle bundle) {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
+
+        Location location = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+        LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, LocationRequest.create(), this);
+
+        LatLng start = new LatLng(25.0186348, 121.5398379);
+
+        if (location != null){  // Genymotion use
+            start = new LatLng(location.getLatitude(), location.getLongitude());
+            CameraUpdate center = CameraUpdateFactory.newLatLng(start);
+            CameraUpdate zoom = CameraUpdateFactory.zoomTo(17);
+            googleMap.moveCamera(center);
+            googleMap.animateCamera(zoom);
+        }
+
+        Routing routing = new Routing.Builder()
+                .travelMode(AbstractRouting.TravelMode.WALKING)
+                .waypoints(start, storeLocation)
+                .withListener(this).build();
+        routing.execute();
+    }
+
+    @Override
+    public void onConnectionSuspended(int i) {
+
+    }
+
+    @Override
+    public void onConnectionFailed(ConnectionResult connectionResult) {
+
+    }
+
+    @Override
+    public void onStop() {
+        if (mGoogleApiClient != null) mGoogleApiClient.connect();
+        super.onStop();
+    }
+
+    @Override
+    public void onLocationChanged(Location location) {
+        LatLng start = new LatLng(25.0186348, 121.5398379);
+
+        if (location != null){  // Genymotion use
+            start = new LatLng(location.getLatitude(), location.getLongitude());
+            CameraUpdate center = CameraUpdateFactory.newLatLng(start);
+            CameraUpdate zoom = CameraUpdateFactory.zoomTo(17);
+            googleMap.moveCamera(center);
+            googleMap.animateCamera(zoom);
+        }
+    }
+
     private static class GeoCodingTask extends AsyncTask<String, Void , double[]> {
-        GoogleMap googleMap;
-        private ArrayList<Polyline> polylines;
+//        GoogleMap googleMapap;
+        private final WeakReference<GeocodingTaskResponse> geocodingTaskResponseWeakReference;
+
 
         @Override
         protected double[] doInBackground(String... params) {
@@ -134,61 +285,16 @@ public class OrderActivity extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(double[] latlng) {
-            LatLng storeLocation = new LatLng(latlng[0], latlng[1]);
+            if (latlng != null && geocodingTaskResponseWeakReference.get() != null) {
+                LatLng storeLocation = new LatLng(latlng[0], latlng[1]);
+                GeocodingTaskResponse response = geocodingTaskResponseWeakReference.get();
+                response.responseWithGeocodingResults(storeLocation);
 
-            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(storeLocation, 17));
-            googleMap.addMarker(new MarkerOptions().position(storeLocation));
-
-            LatLng start = new LatLng(25.0186348, 121.5398379);
-            Routing routing = new Routing.Builder()
-                    .travelMode(AbstractRouting.TravelMode.WALKING)
-                    .waypoints(start, storeLocation)
-                    .withListener(new RoutingListener() {
-                        @Override
-                        public void onRoutingFailure(RouteException e) {
-
-                        }
-
-                        @Override
-                        public void onRoutingStart() {
-
-                        }
-
-                        @Override
-                        public void onRoutingSuccess(ArrayList<Route> routes, int index) {
-                            if(polylines != null) {
-                                for (Polyline poly : polylines) {
-                                    poly.remove();
-                                }
-                            }
-
-                            polylines = new ArrayList<>();
-                            //add route(s) to the map.
-                            for (int i = 0; i <routes.size(); i++) {
-
-                                //In case of more than 5 alternative routes
-
-                                PolylineOptions polyOptions = new PolylineOptions();
-                                polyOptions.color(Color.BLUE);  // go way collor
-                                polyOptions.width(10 + i * 3);  // go way width
-                                polyOptions.addAll(routes.get(i).getPoints());
-                                Polyline polyline = googleMap.addPolyline(polyOptions);
-                                polylines.add(polyline);
-
-//            Toast.makeText(getApplicationContext(),"Route "+ (i+1) +": distance - "+ routes.get(i).getDistanceValue()+": duration - "+ routes.get(i).getDurationValue(),Toast.LENGTH_SHORT).show();
-                            }
-                        }
-
-                        @Override
-                        public void onRoutingCancelled() {
-
-                        }
-                    }).build();
-            routing.execute();
+            }
         }
 
-        public GeoCodingTask(GoogleMap googleMap){
-            this.googleMap =googleMap;
+        public GeoCodingTask(GeocodingTaskResponse response){
+            this.geocodingTaskResponseWeakReference = new WeakReference<GeocodingTaskResponse>(response);
         }
     }
 
@@ -219,4 +325,8 @@ public class OrderActivity extends AppCompatActivity {
             }
         }
     }
+}
+
+interface GeocodingTaskResponse{
+    void responseWithGeocodingResults(LatLng latLng);
 }
