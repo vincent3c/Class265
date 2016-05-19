@@ -14,7 +14,11 @@ import android.os.SystemClock;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.MotionEvent;
+import android.view.View;
 import android.widget.ImageView;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
 import com.directions.route.AbstractRouting;
@@ -63,7 +67,7 @@ public class OrderActivity extends AppCompatActivity implements GeocodingTaskRes
     private ArrayList<Polyline> polylines;
     private LatLng storeLocation;
     private GoogleApiClient mGoogleApiClient;
-
+    private ScrollView scrollView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,6 +79,7 @@ public class OrderActivity extends AppCompatActivity implements GeocodingTaskRes
         menuResults = (TextView) findViewById(R.id.menuResults);
 //        photo = (ImageView)findViewById(R.id.photoImageView);
         mapImageView = (ImageView) findViewById(R.id.mapImageView);
+
 
         Intent intent = getIntent();
         note.setText(intent.getStringExtra("note"));
@@ -127,6 +132,37 @@ public class OrderActivity extends AppCompatActivity implements GeocodingTaskRes
             public void onMapReady(GoogleMap map) {
                 (new GeoCodingTask(OrderActivity.this)).execute(address);
                 googleMap = map;
+            }
+        });
+
+        scrollView = (ScrollView) findViewById(R.id.scrollView);
+        ImageView transparentImageView = (ImageView) findViewById(R.id.imageView2);
+
+        transparentImageView.setOnTouchListener(new View.OnTouchListener() {
+
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                Log.d("Debug", "Touch it");
+                int action = event.getAction();
+                switch (action) {
+                    case MotionEvent.ACTION_DOWN:
+                        // Disallow ScrollView to intercept touch events.
+                        scrollView.requestDisallowInterceptTouchEvent(true);
+                        // Disable touch on transparent view
+                        return false;
+
+                    case MotionEvent.ACTION_UP:
+                        // Allow ScrollView to intercept touch events.
+                        scrollView.requestDisallowInterceptTouchEvent(false);
+                        return true;
+
+                    case MotionEvent.ACTION_MOVE:
+                        scrollView.requestDisallowInterceptTouchEvent(true);
+                        return false;
+
+                    default:
+                        return true;
+                }
             }
         });
 
